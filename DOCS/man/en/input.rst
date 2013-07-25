@@ -63,7 +63,7 @@ List of Input Commands
     disabling default bindings, without disabling all bindings with
     ``--no-input-default-bindings``.
 
-``seek <seconds> [relative|absolute|absolute-percent|- [default-precise|exact|keyframes]]``
+``seek <seconds> [relative|absolute|absolute-percent|- [default-precise|exact|keyframes|- [fixed|scalable]]]``
     Change the playback position. By default, seeks by a relative amount of
     seconds.
 
@@ -103,7 +103,7 @@ List of Input Commands
 ``set <property> "<value>"``
     Set the given property to the given value.
 
-``add <property> [<value>]``
+``add <property> [<value>- [fixed|scalable]]``
     Add the given value to the property. On overflow or underflow, clamp the
     property to the maximum. If ``<value>`` is omitted, assume ``1``.
 
@@ -112,7 +112,7 @@ List of Input Commands
     overflow, set the property back to the minimum, on underflow set it to the
     maximum. If ``up`` or ``down`` is omitted, assume ``up``.
 
-``speed_mult <value>``
+``speed_mult <value> [fixed|scalable]``
     Multiply the ``speed`` property by the given value.
 
 ``screenshot [subtitles|video|window|- [single|each-frame]]``

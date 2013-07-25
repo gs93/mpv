@@ -128,8 +128,14 @@ static const mp_cmd_t mp_cmds[] = {
       OARG_CHOICE(0, ({"default-precise", 0},   {"0", 0},
                       {"exact", 1},             {"1", 1},
                       {"keyframes", -1},        {"-1", -1})),
+      OARG_CHOICE(0, ({"fixed", 0},             {"0", 0},
+                      {"scalable", 1},          {"1", 1})),
   }},
-  { MP_CMD_SPEED_MULT, "speed_mult", { ARG_FLOAT } },
+  { MP_CMD_SPEED_MULT, "speed_mult", {
+      ARG_FLOAT,
+      OARG_CHOICE(0, ({"fixed", 0},             {"0", 0},
+                      {"scalable", 1},          {"1", 1})),
+  }},
   { MP_CMD_QUIT, "quit", { OARG_INT(0) } },
   { MP_CMD_QUIT_WATCH_LATER, "quit_watch_later", },
   { MP_CMD_STOP, "stop", },
@@ -195,7 +201,12 @@ static const mp_cmd_t mp_cmds[] = {
   { MP_CMD_KEYDOWN_EVENTS, "key_down_event", { ARG_INT } },
   { MP_CMD_SET, "set", { ARG_STRING,  ARG_STRING } },
   { MP_CMD_GET_PROPERTY, "get_property", { ARG_STRING } },
-  { MP_CMD_ADD, "add", { ARG_STRING, OARG_FLOAT(0) } },
+  { MP_CMD_ADD, "add", {
+      ARG_STRING,
+      OARG_FLOAT(0),
+      OARG_CHOICE(0, ({"fixed", 0},             {"0", 0},
+                      {"scalable", 1},          {"1", 1})),
+  }},
   { MP_CMD_CYCLE, "cycle", {
       ARG_STRING,
       { .type = {"", NULL, &m_option_type_cycle_dir},
@@ -1524,19 +1535,9 @@ void mp_input_put_axis(struct input_ctx *ictx, int direction, double value)
     if (!cmd)
         return;
 
-    // apply the axis value where it makes sense
-    switch (cmd->id) {
-    case MP_CMD_SEEK:
-        cmd->args[0].v.d *= value;
-        break;
-    case MP_CMD_SPEED_MULT:
-        cmd->args[0].v.f *= value;
-        break;
-    case MP_CMD_ADD: // e.g.: audio delay
-        if (cmd->args[1].v.f)
-            cmd->args[1].v.f *= value;
-        break;
-    }
+    // apply the axis value, if the command is not scalable it will not change
+    // the value
+    mp_cmd_numeric_scale(cmd, value);
 
     ictx->got_new_events = true;
     add_key_cmd(ictx, cmd);
@@ -1812,6 +1813,26 @@ mp_cmd_t *mp_cmd_clone(mp_cmd_t *cmd)
     }
 
     return ret;
+}
+
+void mp_cmd_numeric_scale(struct mp_cmd *cmd, double value)
+{
+    // check last argument for scalable/fixed value 
+    // then apply the multiplier if scalable
+    switch (cmd->id) {
+    case MP_CMD_SEEK:
+        if (cmd->args[3].v.i)
+            cmd->args[0].v.d *= value;
+        break;
+    case MP_CMD_SPEED_MULT:
+        if (cmd->args[1].v.i)
+            cmd->args[0].v.f *= value;
+        break;
+    case MP_CMD_ADD: // e.g.: audio delay
+        if (cmd->args[2].v.i && cmd->args[1].v.f)
+            cmd->args[1].v.f *= value;
+        break;
+    }
 }
 
 int mp_input_get_key_from_name(const char *name)

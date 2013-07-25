@@ -217,6 +217,9 @@ void mp_cmd_free(struct mp_cmd *cmd);
 // This creates a copy of a command (used by the auto repeat stuff).
 struct mp_cmd *mp_cmd_clone(struct mp_cmd *cmd);
 
+// Scales the numeric value if it is scalable
+void mp_cmd_numeric_scale(struct mp_cmd *cmd, double value);
+
 // Set current input section. The section is appended on top of the list of
 // active sections, so its bindings are considered first. If the section was
 // already active, it's moved to the top as well.
