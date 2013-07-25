@@ -423,6 +423,11 @@ static const struct key_name key_names[] = {
   { MP_MK_PREV,         "MK_PREV" },
   { MP_MK_NEXT,         "MK_NEXT" },
 
+  { MP_AXIS_UP,         "AXIS_UP" },
+  { MP_AXIS_DOWN,       "AXIS_DOWN" },
+  { MP_AXIS_LEFT,       "AXIS_LEFT" },
+  { MP_AXIS_RIGHT,      "AXIS_RIGHT" },
+
   { MP_KEY_POWER,       "POWER" },
   { MP_KEY_MENU,        "MENU" },
   { MP_KEY_PLAY,        "PLAY" },
@@ -1511,6 +1516,30 @@ void mp_input_put_key_utf8(struct input_ctx *ictx, int mods, struct bstr t)
             break;
         mp_input_put_key(ictx, code | mods);
     }
+}
+
+void mp_input_put_axis(struct input_ctx *ictx, int direction, double value)
+{
+    struct mp_cmd *cmd = interpret_key(ictx, direction);
+    if (!cmd)
+        return;
+
+    // apply the axis value where it makes sense
+    switch (cmd->id) {
+    case MP_CMD_SEEK:
+        cmd->args[0].v.d *= value;
+        break;
+    case MP_CMD_SPEED_MULT:
+        cmd->args[0].v.f *= value;
+        break;
+    case MP_CMD_ADD: // e.g.: audio delay
+        if (cmd->args[1].v.f)
+            cmd->args[1].v.f *= value;
+        break;
+    }
+
+    ictx->got_new_events = true;
+    add_key_cmd(ictx, cmd);
 }
 
 static void trigger_mouse_leave(struct input_ctx *ictx, char *new_section)
